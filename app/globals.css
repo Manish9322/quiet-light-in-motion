@@ -1,0 +1,674 @@
+@import "tailwindcss";
+
+@theme inline {
+  --font-display: var(--font-display), ui-sans-serif, system-ui, sans-serif;
+  --font-sans: var(--font-sans), ui-sans-serif, system-ui, sans-serif;
+}
+
+/* ==========================================================================
+   Monochromatic Atmospheric Light-Beam System
+   Compositor-only animations (transform & opacity) for smooth 60fps playback.
+   ========================================================================== */
+
+@keyframes beam-drift {
+  0% {
+    transform: translate3d(-100%, 0, 0);
+  }
+  100% {
+    transform: translate3d(100%, 0, 0);
+  }
+}
+
+/* Independent illumination curves so beams brighten, linger, and dissolve naturally */
+@keyframes beam-glow-center {
+  0% {
+    opacity: 0;
+  }
+  14% {
+    opacity: calc(var(--beam-peak, 0.7) * 0.25);
+  }
+  42% {
+    opacity: var(--beam-peak, 0.7);
+  }
+  58% {
+    opacity: calc(var(--beam-peak, 0.7) * 0.92);
+  }
+  84% {
+    opacity: calc(var(--beam-peak, 0.7) * 0.2);
+  }
+  100% {
+    opacity: 0;
+  }
+}
+
+@keyframes beam-glow-early {
+  0% {
+    opacity: 0;
+  }
+  12% {
+    opacity: calc(var(--beam-peak, 0.65) * 0.5);
+  }
+  30% {
+    opacity: var(--beam-peak, 0.65);
+  }
+  52% {
+    opacity: calc(var(--beam-peak, 0.65) * 0.58);
+  }
+  78% {
+    opacity: calc(var(--beam-peak, 0.65) * 0.14);
+  }
+  100% {
+    opacity: 0;
+  }
+}
+
+@keyframes beam-glow-late {
+  0% {
+    opacity: 0;
+  }
+  20% {
+    opacity: calc(var(--beam-peak, 0.7) * 0.12);
+  }
+  48% {
+    opacity: calc(var(--beam-peak, 0.7) * 0.68);
+  }
+  68% {
+    opacity: var(--beam-peak, 0.7);
+  }
+  90% {
+    opacity: calc(var(--beam-peak, 0.7) * 0.22);
+  }
+  100% {
+    opacity: 0;
+  }
+}
+
+@keyframes beam-glow-shimmer {
+  0% {
+    opacity: 0;
+  }
+  18% {
+    opacity: calc(var(--beam-peak, 0.55) * 0.35);
+  }
+  36% {
+    opacity: calc(var(--beam-peak, 0.55) * 0.85);
+  }
+  50% {
+    opacity: calc(var(--beam-peak, 0.55) * 0.55);
+  }
+  68% {
+    opacity: var(--beam-peak, 0.55);
+  }
+  88% {
+    opacity: calc(var(--beam-peak, 0.55) * 0.18);
+  }
+  100% {
+    opacity: 0;
+  }
+}
+
+@keyframes ambient-breathe {
+  0%,
+  100% {
+    opacity: 0.42;
+    transform: scaleX(1) translate3d(0, 0, 0);
+  }
+  50% {
+    opacity: 0.68;
+    transform: scaleX(1.06) translate3d(2%, 0, 0);
+  }
+}
+
+/* Subtle charcoal atmospheric stage */
+.light-stage {
+  background:
+    radial-gradient(
+      ellipse 78% 58% at 50% 50%,
+      rgba(36, 36, 40, 0.42) 0%,
+      rgba(16, 16, 19, 0.72) 52%,
+      #050505 100%
+    );
+}
+
+.light-stage::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: repeating-linear-gradient(
+    to bottom,
+    rgba(255, 255, 255, 0.012) 0px,
+    rgba(255, 255, 255, 0.012) 1px,
+    transparent 1px,
+    transparent 24px
+  );
+  mask-image: radial-gradient(ellipse 85% 75% at 50% 50%, black 20%, transparent 90%);
+}
+
+.ambient-horizon {
+  animation: ambient-breathe 22s ease-in-out infinite;
+  will-change: transform, opacity;
+}
+
+/* Carrier that glides smoothly from off-screen left to off-screen right */
+.beam-carrier {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: var(--beam-y, 50%);
+  height: var(--beam-h, 2px);
+  pointer-events: none;
+  animation: beam-drift var(--beam-duration, 18s) linear var(--beam-delay, 0s) infinite;
+  will-change: transform;
+}
+
+/* Individual horizontal light beam with tapered silver/white core */
+.beam-streak {
+  position: absolute;
+  top: 0;
+  left: var(--beam-offset, 18%);
+  width: var(--beam-len, 52%);
+  height: 100%;
+  border-radius: 9999px;
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    rgba(161, 161, 170, 0.14) 16%,
+    rgba(228, 228, 231, 0.56) 48%,
+    rgba(255, 255, 255, 0.96) 72%,
+    rgba(212, 212, 216, 0.45) 88%,
+    transparent 100%
+  );
+  filter: blur(var(--beam-blur, 0.5px));
+  animation: var(--beam-glow-anim, beam-glow-center) var(--beam-duration, 18s) ease-in-out
+    var(--beam-delay, 0s) infinite;
+  will-change: opacity;
+}
+
+/* Soft outer silver halo using pseudo-element to limit DOM nodes */
+.beam-streak::before {
+  content: "";
+  position: absolute;
+  left: 6%;
+  right: 4%;
+  top: calc(var(--halo-spread, 6px) * -1);
+  bottom: calc(var(--halo-spread, 6px) * -1);
+  border-radius: 9999px;
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    rgba(196, 196, 204, 0.08) 22%,
+    rgba(244, 244, 246, 0.26) 68%,
+    rgba(180, 180, 188, 0.08) 90%,
+    transparent 100%
+  );
+  filter: blur(var(--halo-blur, 10px));
+}
+
+/* Concentrated incandescent white focal glint near the leading third */
+.beam-streak::after {
+  content: "";
+  position: absolute;
+  left: 48%;
+  right: 12%;
+  top: 0;
+  bottom: 0;
+  border-radius: 9999px;
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    rgba(255, 255, 255, 0.85) 55%,
+    rgba(255, 255, 255, 0.25) 85%,
+    transparent 100%
+  );
+  filter: blur(0.4px);
+}
+
+/* Wide diffused atmospheric ribbons (background depth layer) */
+.beam-ribbon {
+  position: absolute;
+  top: 0;
+  left: var(--beam-offset, 12%);
+  width: var(--beam-len, 68%);
+  height: 100%;
+  border-radius: 9999px;
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    rgba(113, 113, 122, 0.16) 24%,
+    rgba(212, 212, 216, 0.34) 58%,
+    rgba(161, 161, 170, 0.14) 84%,
+    transparent 100%
+  );
+  filter: blur(var(--beam-blur, 18px));
+  animation: var(--beam-glow-anim, beam-glow-center) var(--beam-duration, 28s) ease-in-out
+    var(--beam-delay, 0s) infinite;
+  will-change: opacity;
+}
+
+/* Responsive beam tuning for smaller viewports */
+@media (max-width: 767px) {
+  .beam-streak {
+    left: calc(var(--beam-offset, 18%) * 0.55);
+    width: min(86%, calc(var(--beam-len, 52%) * 1.32));
+  }
+
+  .beam-streak::before {
+    top: calc(var(--halo-spread, 6px) * -0.75);
+    bottom: calc(var(--halo-spread, 6px) * -0.75);
+    filter: blur(calc(var(--halo-blur, 10px) * 0.72));
+  }
+
+  .beam-ribbon {
+    left: 6%;
+    width: 88%;
+    filter: blur(calc(var(--beam-blur, 18px) * 0.75));
+  }
+}
+
+/* Accessibility: static balanced monochrome composition when reduced motion is preferred */
+@media (prefers-reduced-motion: reduce) {
+  .beam-carrier,
+  .beam-streak,
+  .beam-ribbon,
+  .ambient-horizon {
+    animation: none !important;
+  }
+
+  .beam-carrier {
+    transform: translate3d(0, 0, 0) !important;
+  }
+
+  .beam-streak,
+  .beam-ribbon {
+    opacity: calc(var(--beam-peak, 0.6) * 0.72) !important;
+  }
+}
+
+/* ==========================================================================
+   Individual Staggered Beam Presets (3 independent depth layers, 28 beams)
+   Coprime-like durations & staggered negative delays prevent synchronization.
+   ========================================================================== */
+
+/* Layer 1: Wide diffused ambient ribbons (6 beams, 10% -> 90%) */
+.beam-ribbon-1 {
+  --beam-y: 10%;
+  --beam-h: 26px;
+  --beam-offset: 8%;
+  --beam-len: 70%;
+  --beam-blur: 26px;
+  --beam-peak: 0.22;
+  --beam-duration: 35.3s;
+  --beam-delay: -10.2s;
+  --beam-glow-anim: beam-glow-early;
+}
+
+.beam-ribbon-2 {
+  --beam-y: 26%;
+  --beam-h: 30px;
+  --beam-offset: 14%;
+  --beam-len: 74%;
+  --beam-blur: 28px;
+  --beam-peak: 0.26;
+  --beam-duration: 38.9s;
+  --beam-delay: -22.4s;
+  --beam-glow-anim: beam-glow-center;
+}
+
+.beam-ribbon-3 {
+  --beam-y: 44%;
+  --beam-h: 38px;
+  --beam-offset: 10%;
+  --beam-len: 80%;
+  --beam-blur: 32px;
+  --beam-peak: 0.3;
+  --beam-duration: 43.1s;
+  --beam-delay: -31.7s;
+  --beam-glow-anim: beam-glow-late;
+}
+
+.beam-ribbon-4 {
+  --beam-y: 60%;
+  --beam-h: 32px;
+  --beam-offset: 16%;
+  --beam-len: 72%;
+  --beam-blur: 28px;
+  --beam-peak: 0.25;
+  --beam-duration: 36.7s;
+  --beam-delay: -14.8s;
+  --beam-glow-anim: beam-glow-shimmer;
+}
+
+.beam-ribbon-5 {
+  --beam-y: 76%;
+  --beam-h: 26px;
+  --beam-offset: 18%;
+  --beam-len: 68%;
+  --beam-blur: 24px;
+  --beam-peak: 0.23;
+  --beam-duration: 32.3s;
+  --beam-delay: -5.9s;
+  --beam-glow-anim: beam-glow-center;
+}
+
+.beam-ribbon-6 {
+  --beam-y: 90%;
+  --beam-h: 22px;
+  --beam-offset: 12%;
+  --beam-len: 64%;
+  --beam-blur: 24px;
+  --beam-peak: 0.19;
+  --beam-duration: 39.7s;
+  --beam-delay: -27.1s;
+  --beam-glow-anim: beam-glow-early;
+}
+
+/* Layer 2: Mid-plane atmospheric silver beams (10 beams, 8% -> 91%) */
+.beam-mid-1 {
+  --beam-y: 8%;
+  --beam-h: 2px;
+  --beam-offset: 12%;
+  --beam-len: 46%;
+  --beam-blur: 2.4px;
+  --halo-spread: 9px;
+  --halo-blur: 13px;
+  --beam-peak: 0.36;
+  --beam-duration: 22.9s;
+  --beam-delay: -6.1s;
+  --beam-glow-anim: beam-glow-early;
+}
+
+.beam-mid-2 {
+  --beam-y: 17%;
+  --beam-h: 2.5px;
+  --beam-offset: 28%;
+  --beam-len: 54%;
+  --beam-blur: 2.8px;
+  --halo-spread: 10px;
+  --halo-blur: 14px;
+  --beam-peak: 0.46;
+  --beam-duration: 25.7s;
+  --beam-delay: -15.3s;
+  --beam-glow-anim: beam-glow-center;
+}
+
+.beam-mid-3 {
+  --beam-y: 26%;
+  --beam-h: 2px;
+  --beam-offset: 10%;
+  --beam-len: 42%;
+  --beam-blur: 2.2px;
+  --halo-spread: 9px;
+  --halo-blur: 12px;
+  --beam-peak: 0.4;
+  --beam-duration: 20.3s;
+  --beam-delay: -11.8s;
+  --beam-glow-anim: beam-glow-late;
+}
+
+.beam-mid-4 {
+  --beam-y: 35%;
+  --beam-h: 3px;
+  --beam-offset: 22%;
+  --beam-len: 60%;
+  --beam-blur: 3px;
+  --halo-spread: 12px;
+  --halo-blur: 16px;
+  --beam-peak: 0.56;
+  --beam-duration: 26.9s;
+  --beam-delay: -19.4s;
+  --beam-glow-anim: beam-glow-shimmer;
+}
+
+.beam-mid-5 {
+  --beam-y: 44%;
+  --beam-h: 2px;
+  --beam-offset: 34%;
+  --beam-len: 48%;
+  --beam-blur: 2.6px;
+  --halo-spread: 10px;
+  --halo-blur: 14px;
+  --beam-peak: 0.48;
+  --beam-duration: 19.3s;
+  --beam-delay: -3.7s;
+  --beam-glow-anim: beam-glow-center;
+}
+
+.beam-mid-6 {
+  --beam-y: 53%;
+  --beam-h: 2.5px;
+  --beam-offset: 14%;
+  --beam-len: 64%;
+  --beam-blur: 2px;
+  --halo-spread: 11px;
+  --halo-blur: 15px;
+  --beam-peak: 0.62;
+  --beam-duration: 24.1s;
+  --beam-delay: -13.2s;
+  --beam-glow-anim: beam-glow-early;
+}
+
+.beam-mid-7 {
+  --beam-y: 62%;
+  --beam-h: 2px;
+  --beam-offset: 26%;
+  --beam-len: 50%;
+  --beam-blur: 3.2px;
+  --halo-spread: 10px;
+  --halo-blur: 14px;
+  --beam-peak: 0.44;
+  --beam-duration: 28.3s;
+  --beam-delay: -21.6s;
+  --beam-glow-anim: beam-glow-late;
+}
+
+.beam-mid-8 {
+  --beam-y: 71%;
+  --beam-h: 2.5px;
+  --beam-offset: 8%;
+  --beam-len: 56%;
+  --beam-blur: 2.5px;
+  --halo-spread: 11px;
+  --halo-blur: 15px;
+  --beam-peak: 0.52;
+  --beam-duration: 21.1s;
+  --beam-delay: -8.5s;
+  --beam-glow-anim: beam-glow-center;
+}
+
+.beam-mid-9 {
+  --beam-y: 81%;
+  --beam-h: 2px;
+  --beam-offset: 30%;
+  --beam-len: 44%;
+  --beam-blur: 3px;
+  --halo-spread: 9px;
+  --halo-blur: 13px;
+  --beam-peak: 0.42;
+  --beam-duration: 27.7s;
+  --beam-delay: -17.9s;
+  --beam-glow-anim: beam-glow-shimmer;
+}
+
+.beam-mid-10 {
+  --beam-y: 91%;
+  --beam-h: 2px;
+  --beam-offset: 18%;
+  --beam-len: 48%;
+  --beam-blur: 2.8px;
+  --halo-spread: 9px;
+  --halo-blur: 13px;
+  --beam-peak: 0.34;
+  --beam-duration: 23.9s;
+  --beam-delay: -4.8s;
+  --beam-glow-anim: beam-glow-early;
+}
+
+/* Layer 3: Crisp white & silver core filaments (12 beams, 11% -> 88%) */
+.beam-core-1 {
+  --beam-y: 11%;
+  --beam-h: 1px;
+  --beam-offset: 20%;
+  --beam-len: 32%;
+  --beam-blur: 0.4px;
+  --halo-spread: 4px;
+  --halo-blur: 7px;
+  --beam-peak: 0.58;
+  --beam-duration: 15.7s;
+  --beam-delay: -3.4s;
+  --beam-glow-anim: beam-glow-center;
+}
+
+.beam-core-2 {
+  --beam-y: 19%;
+  --beam-h: 1px;
+  --beam-offset: 36%;
+  --beam-len: 38%;
+  --beam-blur: 0.5px;
+  --halo-spread: 5px;
+  --halo-blur: 8px;
+  --beam-peak: 0.72;
+  --beam-duration: 13.9s;
+  --beam-delay: -9.8s;
+  --beam-glow-anim: beam-glow-late;
+}
+
+.beam-core-3 {
+  --beam-y: 24%;
+  --beam-h: 1.5px;
+  --beam-offset: 10%;
+  --beam-len: 42%;
+  --beam-blur: 0.4px;
+  --halo-spread: 6px;
+  --halo-blur: 9px;
+  --beam-peak: 0.78;
+  --beam-duration: 16.7s;
+  --beam-delay: -12.1s;
+  --beam-glow-anim: beam-glow-early;
+}
+
+.beam-core-4 {
+  --beam-y: 31%;
+  --beam-h: 1px;
+  --beam-offset: 28%;
+  --beam-len: 28%;
+  --beam-blur: 0.3px;
+  --halo-spread: 4px;
+  --halo-blur: 7px;
+  --beam-peak: 0.66;
+  --beam-duration: 12.1s;
+  --beam-delay: -5.6s;
+  --beam-glow-anim: beam-glow-shimmer;
+}
+
+.beam-core-5 {
+  --beam-y: 39%;
+  --beam-h: 1.5px;
+  --beam-offset: 16%;
+  --beam-len: 46%;
+  --beam-blur: 0.5px;
+  --halo-spread: 7px;
+  --halo-blur: 11px;
+  --beam-peak: 0.88;
+  --beam-duration: 17.9s;
+  --beam-delay: -14.3s;
+  --beam-glow-anim: beam-glow-center;
+}
+
+.beam-core-6 {
+  --beam-y: 46%;
+  --beam-h: 1px;
+  --beam-offset: 42%;
+  --beam-len: 30%;
+  --beam-blur: 0.3px;
+  --halo-spread: 4px;
+  --halo-blur: 6px;
+  --beam-peak: 0.74;
+  --beam-duration: 11.3s;
+  --beam-delay: -7.2s;
+  --beam-glow-anim: beam-glow-early;
+}
+
+.beam-core-7 {
+  --beam-y: 51%;
+  --beam-h: 1.5px;
+  --beam-offset: 22%;
+  --beam-len: 48%;
+  --beam-blur: 0.4px;
+  --halo-spread: 7px;
+  --halo-blur: 11px;
+  --beam-peak: 0.9;
+  --beam-duration: 18.1s;
+  --beam-delay: -1.9s;
+  --beam-glow-anim: beam-glow-shimmer;
+}
+
+.beam-core-8 {
+  --beam-y: 58%;
+  --beam-h: 1px;
+  --beam-offset: 8%;
+  --beam-len: 34%;
+  --beam-blur: 0.4px;
+  --halo-spread: 5px;
+  --halo-blur: 8px;
+  --beam-peak: 0.68;
+  --beam-duration: 14.3s;
+  --beam-delay: -10.7s;
+  --beam-glow-anim: beam-glow-late;
+}
+
+.beam-core-9 {
+  --beam-y: 66%;
+  --beam-h: 1.5px;
+  --beam-offset: 30%;
+  --beam-len: 40%;
+  --beam-blur: 0.5px;
+  --halo-spread: 6px;
+  --halo-blur: 10px;
+  --beam-peak: 0.8;
+  --beam-duration: 16.3s;
+  --beam-delay: -4.5s;
+  --beam-glow-anim: beam-glow-center;
+}
+
+.beam-core-10 {
+  --beam-y: 74%;
+  --beam-h: 1px;
+  --beam-offset: 18%;
+  --beam-len: 36%;
+  --beam-blur: 0.4px;
+  --halo-spread: 5px;
+  --halo-blur: 8px;
+  --beam-peak: 0.7;
+  --beam-duration: 19.1s;
+  --beam-delay: -15.8s;
+  --beam-glow-anim: beam-glow-early;
+}
+
+.beam-core-11 {
+  --beam-y: 83%;
+  --beam-h: 1px;
+  --beam-offset: 38%;
+  --beam-len: 26%;
+  --beam-blur: 0.3px;
+  --halo-spread: 4px;
+  --halo-blur: 7px;
+  --beam-peak: 0.62;
+  --beam-duration: 12.7s;
+  --beam-delay: -6.4s;
+  --beam-glow-anim: beam-glow-late;
+}
+
+.beam-core-12 {
+  --beam-y: 88%;
+  --beam-h: 1px;
+  --beam-offset: 14%;
+  --beam-len: 32%;
+  --beam-blur: 0.4px;
+  --halo-spread: 4px;
+  --halo-blur: 7px;
+  --beam-peak: 0.54;
+  --beam-duration: 15.1s;
+  --beam-delay: -8.3s;
+  --beam-glow-anim: beam-glow-center;
+}

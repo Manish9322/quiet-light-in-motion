@@ -1,0 +1,6 @@
+{
+  "name": "Quiet Light in Motion",
+  "description": "A sophisticated, minimalistic black-and-white digital experience featuring slow-moving horizontal light beams across a dark atmospheric canvas.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
