@@ -6,6 +6,46 @@
 }
 
 /* ==========================================================================
+   Monochromatic Minimalist Scrollbar
+   Matches the deep #050505 obsidian canvas and understated silver accents.
+   ========================================================================== */
+
+/* Standard CSS for Firefox and modern rendering engines */
+html {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(255, 255, 255, 0.18) #050505;
+}
+
+/* WebKit and Chromium browsers (Chrome, Edge, Safari, Arc) */
+::-webkit-scrollbar {
+  width: 7px;
+  height: 7px;
+}
+
+::-webkit-scrollbar-track {
+  background: #050505;
+}
+
+::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.16);
+  border-radius: 9999px;
+  border: 1.5px solid #050505;
+  transition: background-color 0.2s ease;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.32);
+}
+
+::-webkit-scrollbar-thumb:active {
+  background: rgba(255, 255, 255, 0.48);
+}
+
+::-webkit-scrollbar-corner {
+  background: #050505;
+}
+
+/* ==========================================================================
    Monochromatic Atmospheric Light-Beam System
    Compositor-only animations (transform & opacity) for smooth 60fps playback.
    ========================================================================== */
